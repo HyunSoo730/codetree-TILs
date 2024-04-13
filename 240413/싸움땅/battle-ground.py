@@ -1,7 +1,6 @@
 import sys
 from collections import defaultdict
 
-
 # nxn 보드, 각 칸 무기 존재 or 빈칸,
 # 초기 세팅 : 무기 없는 빈격자에 플레이어들이 위치, 초기 능력치 가짐(모두 다름) -> 따로 기록
 # 각 칸은 총 공격력 나타내는 보드 -> 여러 개의 총이 존재 가능
@@ -56,7 +55,7 @@ def player_move(): # p 보드 갱신 추가
         nx,ny = x + dx[dir], y + dy[dir] # 이동 위치
         if not isInner(nx,ny): # 외부
             dir = (dir+2) % 4 # 방향 반대
-            nx,ny = x + dx[dir],y + dy[dir] # 방향 바꿔서 이동
+            nx,ny = x + dx[dir], y + dy[dir] # 방향 바꿔서 이동
         #  이동한 위치 플레이어 유무 판단
         if p[nx][ny] == 0: # 플레이어 X
             if len(guns[(nx,ny)]) > 0: # 총 존재
@@ -68,7 +67,7 @@ def player_move(): # p 보드 갱신 추가
                         flag = True
                 if flag: # 갱신 가능 하면
                     guns[(nx,ny)].remove(max_power)
-                if flag and gun > 0: #  갱신 하면서 이미 총 가지고 있는 경우
+                if flag and gun > 0: #  갱신 가능 하면서 이미 총 가지고 있는 경우
                     guns[(nx,ny)].append(gun)
                 gun = max_power
             player = [nx,ny,dir,s,gun] # 정보 갱신
@@ -99,26 +98,25 @@ def player_move(): # p 보드 갱신 추가
             win_player = players[win_idx]
             lose_player = players[lose_idx]
             # 이긴 플레이어 총 정보 갱신
-            max_power = 0
-            origin_power = win_player[4] # 기존 파워
+            max_power = win_player[4] # 기존정보를 맥스
             flag = False
             guns[(nx,ny)].append(lose_player[4]) # 일단 진 사람의 총도 추가
+            guns[(nx,ny)].append(win_player[4]) # 이긴 사람 총도 추가.
             for gun_power in guns[(nx,ny)]: # 하나씩 꺼내서
                 if gun_power > max_power:
                     max_power = gun_power
                     flag = True # 갱신 됨
-            max_power = max(max_power, win_player[4], lose_player[4])
+            # 플레이어 위치 갱신
             p[win_player[0]][win_player[1]] = 0
-            p[lose_player[0]][lose_player[1]] = 0 # 진 플레이어는 위치 이동해야 하므로
+            p[lose_player[0]][lose_player[1]] = 0
+
             players[win_idx] = [nx,ny,win_player[2],win_player[3],max_power] # 이긴 플레이어 갱신 -> 총 더 강한 거 주움
-            p[nx][ny] = win_idx # 이긴 플레이어는 위치 고수
+            p[nx][ny] = win_idx # 이긴 플레이어는 위치
             players[lose_idx] = [nx,ny,lose_player[2], lose_player[3], 0] # 일단 충돌 위치로 옮겨놓고
             진플레이어행동(lose_idx) # 진 플레이어의 기존 위치, 충돌날 위치 함께
 
             # 이긴 사람의 총 갱신 됐다면 삭제 후 내려놓기 진행
             if flag:
-                if origin_power > 0: # 기존에 총 가지고 있음
-                    guns[(nx,ny)].append(origin_power)
                 guns[(nx,ny)].remove(max_power)
 
         # 본인 턴 종료 후 좌표, 방향, 능력치 등등 갱신해야함
