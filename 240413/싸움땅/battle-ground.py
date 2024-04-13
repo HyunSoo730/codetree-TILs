@@ -1,6 +1,7 @@
 import sys
 from collections import defaultdict
 
+
 # nxn 보드, 각 칸 무기 존재 or 빈칸,
 # 초기 세팅 : 무기 없는 빈격자에 플레이어들이 위치, 초기 능력치 가짐(모두 다름) -> 따로 기록
 # 각 칸은 총 공격력 나타내는 보드 -> 여러 개의 총이 존재 가능
@@ -74,10 +75,13 @@ def player_move(): # p 보드 갱신 추가
             players[i] = player
             p[x][y] = 0 # 기존 위치 플레이어 위치 없애고
             p[nx][ny] = i # 해당 플레이어 위치시키기
-        else: # 플레이어 존재 -> 싸움
+        else: # 플레이어 존재 -> 싸움 dir 갱신이 안됐음.
+
             target_idx = p[nx][ny] # 해당 위치에 존재하는 플레이어 번호
+            players[i][2] = dir # 현재 플레이어의 방향만 갱신
+            player = players[i]
             target_player = players[target_idx]
-            player_power = 능력치계산(s,gun)
+            player_power = 능력치계산(player[3], player[4])
             target_power = 능력치계산(target_player[3], target_player[4])
             win_idx = -1 # 이긴 사람의 인덱스 저장
             lose_idx = -1 # 진 사람 인덱스 저장
@@ -100,8 +104,10 @@ def player_move(): # p 보드 갱신 추가
             # 이긴 플레이어 총 정보 갱신
             max_power = win_player[4] # 기존정보를 맥스
             flag = False
-            guns[(nx,ny)].append(lose_player[4]) # 일단 진 사람의 총도 추가
-            guns[(nx,ny)].append(win_player[4]) # 이긴 사람 총도 추가.
+            if win_player[4] > 0:
+                guns[(nx,ny)].append(win_player[4])
+            if lose_player[4] > 0:
+                guns[(nx,ny)].append(lose_player[4])
             for gun_power in guns[(nx,ny)]: # 하나씩 꺼내서
                 if gun_power > max_power:
                     max_power = gun_power
@@ -115,7 +121,7 @@ def player_move(): # p 보드 갱신 추가
             players[lose_idx] = [nx,ny,lose_player[2], lose_player[3], 0] # 일단 충돌 위치로 옮겨놓고
             진플레이어행동(lose_idx) # 진 플레이어의 기존 위치, 충돌날 위치 함께
 
-            # 이긴 사람의 총 갱신 됐다면 삭제 후 내려놓기 진행
+            # 이긴 사람의 총 갱신 됐다면 삭제
             if flag:
                 guns[(nx,ny)].remove(max_power)
 
@@ -135,12 +141,8 @@ def 플레이어위치확인():
         print(f"{player_num}의 위치 : {val[0],val[1]} 방향 : {val[2]}, 기존능력치 :{val[3]}, 총 공격력 : {val[4]}")
 
 def 진플레이어행동(lose_idx): # 본인 , 충돌난 위치
-    # 본인 총 해당 격자에 내려놓기
     target = players[lose_idx]
     x,y,dir,s,gun = target
-    if gun > 0: # 총 존재하면
-        guns[(x,y)].append(gun) # 본인 총 해당 격자에 내려놓기
-    gun = 0 # 본인 총 능력치 0으로 만들기
     # 방향 이동
     nx,ny = x,y
     direction = dir
@@ -153,7 +155,7 @@ def 진플레이어행동(lose_idx): # 본인 , 충돌난 위치
         if p[nx][ny] == 0: # 해당 좌표 이동 가능 -> 빈칸 or 총 존재
             max_power = 0
             for gun_power in guns[(nx,ny)]: # 이동하려는 좌표의 총 정보 확인
-                max_power = gun_power
+                max_power = max(max_power, gun_power)
             if max_power > 0: # 해당 격자에 총 존재
                 guns[(nx,ny)].remove(max_power) # 지우고
                 gun = max_power # 갱신
