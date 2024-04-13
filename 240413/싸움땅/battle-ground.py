@@ -56,34 +56,34 @@ def player_move(): # p 보드 갱신 추가
         if not isInner(nx,ny): # 외부
             dir = (dir+2) % 4 # 방향 반대
             nx,ny = x + dx[dir], y + dy[dir] # 방향 바꿔서 이동
+
+        # 현재 플레이어 위치 방향 수정
+        p[x][y] = 0 # 일단 현재 위치 삭제
+        players[i] = [nx,ny,dir,s,gun]
+        player = players[i]
+
         #  이동한 위치 플레이어 유무 판단
+        # 이제 과정 진행
         if p[nx][ny] == 0: # 플레이어 X
             if len(guns[(nx,ny)]) > 0: # 총 존재
-                max_power = gun # 현재 총의 능력치
-                flag = False # 갱신 하는지 체크
-                for gun_power in guns[(nx,ny)]:  # 해당 위치에 존재하는 모든 총 확인
-                    if gun_power > max_power:
-                        max_power = gun_power
-                        flag = True
-                if flag: # 갱신 가능 하면
-                    guns[(nx,ny)].remove(max_power)
-                if flag and gun > 0: #  갱신 가능 하면서 이미 총 가지고 있는 경우
-                    guns[(nx,ny)].append(gun)
-                gun = max_power
-            player = [nx,ny,dir,s,gun] # 정보 갱신
-            players[i] = player
-            p[x][y] = 0 # 기존 위치 플레이어 위치 없애고
-            p[nx][ny] = i # 해당 플레이어 위치시키기
-        else: # 플레이어 존재 -> 싸움 dir 갱신이 안됐음.
+                gun_list = guns[(nx,ny)]
+                gun_list.sort() # 공격력 오름차순 정렬
+                if gun_list[-1] > gun: # 기존 총보다 크면 갱신
+                    players[i][4] = gun_list[-1] # 최대값으로 갱신
+                    gun_list.pop() # 마지막 제거 후
+                    gun_list.append(gun) # 기존 값 추가
+                    guns[(nx,ny)] = gun_list # 갱신
+            p[nx][ny] = i # 위치 갱신
 
+        else: # 플레이어 존재 -> 싸움 dir 갱신이 안됐음.
             target_idx = p[nx][ny] # 해당 위치에 존재하는 플레이어 번호
-            players[i][2] = dir # 현재 플레이어의 방향만 갱신
-            player = players[i]
             target_player = players[target_idx]
             player_power = 능력치계산(player[3], player[4])
             target_power = 능력치계산(target_player[3], target_player[4])
             win_idx = -1 # 이긴 사람의 인덱스 저장
             lose_idx = -1 # 진 사람 인덱스 저장
+
+            # 이긴사람, 진 사람 인덱스 확인
             if player_power > target_power:
                 win_idx = i
                 lose_idx = target_idx
@@ -97,32 +97,30 @@ def player_move(): # p 보드 갱신 추가
                 else:
                     win_idx = target_idx
                     lose_idx = i
+            # 이긴사람 점수 추가
             player_score[win_idx] += abs(player_power - target_power)  # 이긴 플레이어 행동 : 스코어 획득
             win_player = players[win_idx]
             lose_player = players[lose_idx]
-            # 이긴 플레이어 총 정보 갱신
+
+            # 이긴 플레이어 총 정보 갱신, 진 사람 총 내려둠
             max_power = win_player[4] # 기존정보를 맥스
             flag = False
-            if win_player[4] > 0:
-                guns[(nx,ny)].append(win_player[4])
             if lose_player[4] > 0:
                 guns[(nx,ny)].append(lose_player[4])
-            for gun_power in guns[(nx,ny)]: # 하나씩 꺼내서
-                if gun_power > max_power:
-                    max_power = gun_power
-                    flag = True # 갱신 됨
-            # 플레이어 위치 갱신
-            p[win_player[0]][win_player[1]] = 0
-            p[lose_player[0]][lose_player[1]] = 0
+            if guns[(nx,ny)]:
+                guns[(nx,ny)].sort()
+                if guns[(nx,ny)][-1] > max_power: # 갱신
+                    flag = True
+                    max_power = guns[(nx,ny)][-1]
+                    guns[(nx,ny)].pop()
+                    guns[(nx,ny)].append(win_player[4]) # 기존값 추가
 
-            players[win_idx] = [nx,ny,win_player[2],win_player[3],max_power] # 이긴 플레이어 갱신 -> 총 더 강한 거 주움
-            p[nx][ny] = win_idx # 이긴 플레이어는 위치
-            players[lose_idx] = [nx,ny,lose_player[2], lose_player[3], 0] # 일단 충돌 위치로 옮겨놓고
+            # 플레이어 위치 갱신 (현재 플레이어 위치는 미리 갱신했기 때문에 이동할 위치에만 갱신)
+            players[win_idx][4] = max_power # 갱신
+            p[nx][ny] = win_idx # 이긴 플레이어 위치 갱신
+            players[lose_idx][4] = 0 # 진 사람 총 초기화
             진플레이어행동(lose_idx) # 진 플레이어의 기존 위치, 충돌날 위치 함께
 
-            # 이긴 사람의 총 갱신 됐다면 삭제
-            if flag:
-                guns[(nx,ny)].remove(max_power)
 
         # 본인 턴 종료 후 좌표, 방향, 능력치 등등 갱신해야함
         # print(f"현재 {i}번째 플레이어 끝나고 플레이어 위치 확인")
@@ -152,12 +150,11 @@ def 진플레이어행동(lose_idx): # 본인 , 충돌난 위치
         if not isInner(nx,ny): continue
         if p[nx][ny] > 0: continue # 다른 플레이어 존재
         if p[nx][ny] == 0: # 해당 좌표 이동 가능 -> 빈칸 or 총 존재
-            max_power = 0
-            for gun_power in guns[(nx,ny)]: # 이동하려는 좌표의 총 정보 확인
-                max_power = max(max_power, gun_power)
-            if max_power > 0: # 해당 격자에 총 존재
-                guns[(nx,ny)].remove(max_power) # 지우고
-                gun = max_power # 갱신
+            if guns[(nx,ny)]: # 존재하면
+                guns[(nx,ny)].sort()
+                max_power = guns[(nx,ny)][-1]
+                gun = max_power
+                guns[(nx,ny)].pop() # 제거
             p[nx][ny] = lose_idx # 이동 표시
             break # 이동하면 끝
 
