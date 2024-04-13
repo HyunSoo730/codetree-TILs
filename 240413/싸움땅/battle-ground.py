@@ -1,7 +1,6 @@
 import sys
 from collections import defaultdict
 
-
 # nxn 보드, 각 칸 무기 존재 or 빈칸,
 # 초기 세팅 : 무기 없는 빈격자에 플레이어들이 위치, 초기 능력치 가짐(모두 다름) -> 따로 기록
 # 각 칸은 총 공격력 나타내는 보드 -> 여러 개의 총이 존재 가능
