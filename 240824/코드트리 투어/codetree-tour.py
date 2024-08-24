@@ -38,7 +38,7 @@ def 상품판매():
 def 시작도시변경(now):
     global start
     start = now
-    dijkstra()
+    dijkstra(start)
     temp = []
     while 여행상품:
         _, id = heapq.heappop(여행상품)
@@ -47,7 +47,7 @@ def 시작도시변경(now):
         revenue, dest = 상품정보[id]
         여행상품추가(id, revenue, dest)
 
-def dijkstra():
+def dijkstra(start):
     global dis
     dis = [INF] * N
     q = [(0, start)]
@@ -65,7 +65,7 @@ def dijkstra():
                 dis[v] = cost
                 heapq.heappush(q, (cost, v))
 
-T = int(input())
+# 전역 변수 초기화
 INF = int(1e9)
 start = 0
 dis = []
@@ -76,12 +76,14 @@ isCancel = [False] * 30001
 여행상품 = []
 상품정보 = defaultdict(tuple)
 
+T = int(input())
+
 for _ in range(T):
     commands = list(map(int, input().split()))
     command = commands[0]
     if command == 100:
         건설(commands[1], commands[2], commands[3:])
-        dijkstra()
+        dijkstra(start)
     elif command == 200:
         id, revenue, dest = commands[1], commands[2], commands[3]
         상품정보[id] = (revenue, dest)
